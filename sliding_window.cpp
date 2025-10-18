@@ -14,8 +14,8 @@ don't forget to maximize or minmimize whatever values u are looking for
 
 
 
-however in the dynamic window appraoch you start the left and right pointers at the zero position
-if it meets ur condition u increament the right pointer and so on untill you encounter a condtion where
+however in the dynamic window approach you start the left and right pointers at the zero position
+if it meets ur condition u increment the right pointer and so on untill you encounter a condtion where
  u need to start a new window ... and keep track of the required min or max value depeneding on the problem definition
  in a variable where u will max or min it
  in starting a new window u increament the left outer most pointer and carry on with the problem
