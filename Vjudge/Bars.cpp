@@ -1,6 +1,5 @@
-#include <iostream>
-#include <vector>
-
+#include <bits/stdc++.h>
+#define int long long
 
 using namespace std;
 
@@ -36,27 +35,30 @@ bool solve(int index , int sum) {
 
 
 
-int main () {
+signed main () {
+    // int t ;
+    // cin>>t;
+    // while (t--) {
+    //     cin>>target;
+    //     cin>>arr_len;
+    //     nums=vector<int>(arr_len);
+    //     for (int  i = 0 ; i< arr_len ; i++){
+    //         cin>>nums[i];
+    // }
+    //     bool ans =  solve(0,0);
+    //     cout << (ans ? "YES" : "NO") << endl;
+    // }
 
 
-    int t ;
-    cin>>t;
-    while (t--) {
-        cin>>target;
-        cin>>arr_len;
-        nums=vector<int>(arr_len);
-        for (int  i = 0 ; i< arr_len ; i++){
-            cin>>nums[i];
+    string s;
+    cin>>s;
+    int ans{};
+    int value = pow(26LL,(int)s.size()-1);
+    for (int i=0;i<(int)s.size()-1;i++) {
+        ans+= ans ;
     }
-        bool ans =  solve(0,0);
-        cout << (ans ? "YES" : "NO") << endl;
-    }
-
-
-
-
-
-
+ans+=s[(int)s.size()-1]-'A'+1;
+    cout<<ans;
 
 
 
