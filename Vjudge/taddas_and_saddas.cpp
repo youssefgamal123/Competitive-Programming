@@ -1,38 +1,41 @@
-#include <bits/stdc++.h>
+#include <algorithm>
+#include <iostream>
+#include <vector>
+#include <algorithm>
 using namespace std;
 
+
+vector <long long>nums;
+long long gen = 0;
+void solve(int index,long long gen){
+
+     if (gen > 0 ){
+        nums.push_back(gen);
+     }
+
+    if (index ==11){
+        return;
+    }
+
+
+    solve(index+1, gen*10+4);
+
+    solve(index + 1,gen*10+7);
+
+}
+
 int main() {
-    string n;
-    cin >> n;
 
-    queue<string> q;
-    vector<string> lucky;
 
-    q.push("4");
-    q.push("7");
+    int n ;
+    cin >>n;
+    solve(0,0);
+    sort(nums.begin(),nums.end());
+    auto it = find(nums.begin(), nums.end(), n);
 
-    while (!q.empty()) {
-        string s = q.front();
-        q.pop();
-
-        lucky.push_back(s);
-
-        if (s.size() < n.size()) {
-            q.push(s + "4");
-            q.push(s + "7");
-        }
+    if (it != nums.end()) {
+        int index = it - nums.begin();
+        cout  << index+1 << endl;
     }
 
-    sort(lucky.begin(), lucky.end());
-
-    int index = 0;
-    for (int i = 0; i < (int)lucky.size(); i++) {
-        if (lucky[i] == n) {
-            index = i + 1;
-            break;
-        }
-    }
-
-    cout << index << endl;
-    return 0;
 }
