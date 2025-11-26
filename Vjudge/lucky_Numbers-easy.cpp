@@ -33,8 +33,6 @@ void solve (int index) {
     gen /=10;
 
 
-
-
 }
 
 
