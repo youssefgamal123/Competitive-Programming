@@ -84,3 +84,257 @@ int main(){
     cout << maxSum(arr, k);
     return 0;
 }
+
+
+
+Given an array of positive integers and an integer target,
+find the minimum length subarray whose sum ≥ target.
+If no such subarray exists, return 0.
+
+
+
+
+#include <iostream>
+#include <vector>
+#include <climits>
+using namespace std;
+
+int minSubArrayLen(int target, vector<int>& nums) {
+    int n = nums.size();
+
+    int left = 0;
+    int currentSum = 0;
+    int minLen = INT_MAX;
+
+    for (int right = 0; right < n; right++) {
+        // expand window
+        currentSum += nums[right];
+
+        // shrink window while condition is satisfied
+        while (currentSum >= target) { // at this point u have a valid window
+            minLen = min(minLen, right - left + 1);
+
+            // remove leftmost element from window
+            currentSum -= nums[left];
+            left++;
+        }
+    }
+
+    return (minLen == INT_MAX) ? 0 : minLen;
+}
+
+int main() {
+    vector<int> arr = {2, 3, 1, 2, 4, 3};
+    int target = 7;
+
+    cout << minSubArrayLen(target, arr);
+    return 0;
+}
+
+
+/*
+==================== SLIDING WINDOW ====================
+
+There are TWO types of sliding window problems:
+
+1) Fixed Size Window (size = k)
+2) Dynamic Window (size changes based on a condition)
+
+-------------------------------------------------------
+1) FIXED SIZE WINDOW
+-------------------------------------------------------
+
+Idea:
+- The window size is always K
+- First, build the initial window of size K
+- Then slide the window one step at a time:
+    - Add the new right element
+    - Remove the old left element
+    - Update the result
+
+Key Concept:
+When the window moves:
+    - The right pointer adds a new element
+    - The left pointer removes an old element
+
+Example:
+[1, 2, 3, 4], k = 3
+
+Windows:
+[1,2,3] → [2,3,4]
+
+Notice:
+- We increment left to "slide"
+- We must REMOVE the effect of the old element
+  (e.g., subtract from sum)
+
+-------------------------------------------------------
+2) DYNAMIC WINDOW (VARIABLE SIZE)
+-------------------------------------------------------
+
+Idea:
+- Window size is NOT fixed
+- It grows until it becomes invalid
+- Then we shrink it until it becomes valid again
+
+Pattern:
+- Expand → Fix → Measure
+
+Steps:
+1) Expand window (move right)
+2) If invalid → shrink (move left using WHILE)
+3) When valid → update result
+
+Key Rule:
+Use WHILE (not IF), because:
+- One removal might NOT be enough
+- We must fix the window completely
+
+-------------------------------------------------------
+MENTAL MODEL
+-------------------------------------------------------
+
+Fixed Window:
+    Grow → When size == K → Slide
+
+Dynamic Window:
+    Grow → While invalid → Shrink → Update answer
+
+-------------------------------------------------------
+IMPORTANT DETAIL
+-------------------------------------------------------
+
+When removing an element from the window:
+- You must remove its EFFECT as well
+
+Examples:
+- If tracking sum → subtract it
+- If tracking frequency → decrement it
+- If using set → erase it
+
+Otherwise, your window state becomes incorrect.
+
+=======================================================
+*/
+
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int maxSum(vector<int>& arr, int k){
+    int n = arr.size();
+
+    // Edge case: invalid window
+    if (n < k) {
+        cout << "Invalid";
+        return -1;
+    }
+
+    // 1) Build initial window of size k
+    int window_sum = 0;
+    for (int i = 0; i < k; i++) {
+        window_sum += arr[i];
+    }
+
+    int max_sum = window_sum;
+
+    // 2) Slide the window
+    for (int right = k; right < n; right++) {
+
+        // Add new element (right side)
+        window_sum += arr[right];
+
+        // Remove old element (left side)
+        // right - k represents the index leaving the window
+        window_sum -= arr[right - k];
+
+        // Update result
+        max_sum = max(max_sum, window_sum);
+    }
+
+    return max_sum;
+}
+
+int main(){
+    vector<int> arr = {5, 2, -1, 0, 3};
+    int k = 3;
+
+    cout << maxSum(arr, k);
+    return 0;
+}
+
+
+// dynamic
+
+#include <iostream>
+#include <vector>
+#include <climits>
+using namespace std;
+
+int minSubArrayLen(int target, vector<int>& nums) {
+    int n = nums.size();
+
+    int left = 0;
+    int currentSum = 0;
+    int minLen = INT_MAX;
+
+    for (int right = 0; right < n; right++) {
+
+        // 1) Expand window
+        currentSum += nums[right];
+
+        // 2) Shrink window while condition is satisfied
+        // (window is VALID: sum >= target)
+        while (currentSum >= target) {
+
+            // Update result (valid window)
+            minLen = min(minLen, right - left + 1);
+
+            // Remove leftmost element (shrink window)
+            currentSum -= nums[left];
+            left++;
+        }
+    }
+
+    return (minLen == INT_MAX) ? 0 : minLen;
+}
+
+int main() {
+    vector<int> arr = {2, 3, 1, 2, 4, 3};
+    int target = 7;
+
+    cout << minSubArrayLen(target, arr);
+    return 0;
+}
+
+
+// Dynamic window standard boilerplate code :
+int dynamicWindow(string s) {
+    unordered_set<char> window;
+
+    int left = 0;
+    int result = 0;
+
+    for (int right = 0; right < s.size(); right++) {
+
+        // 1. expand window
+        // (sometimes insert here, sometimes after while depending on problem)
+
+        // 2. shrink while invalid
+        while (/* window is invalid */) {
+            // remove from window
+            window.erase(s[left]);
+            left++;
+        }
+
+        // 3. insert / finalize window
+        window.insert(s[right]);
+
+        // 4. update result
+        result = max(result, right - left + 1);
+    }
+
+    return result;
+}
+
+
