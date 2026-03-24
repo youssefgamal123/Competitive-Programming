@@ -72,6 +72,9 @@ int maxSum(vector<int>& arr, int k){
     int window_sum = max_sum;
     for (int i = k; i < n; i++) {
         window_sum += arr[i] - arr[i - k]; // arr[i] acts as a righ  pointer and arr[i-k] gives the left outer pointer where it's value shall be subtracted from the current sum as this element is not in our tracked window so keeping it will result in  a bigger sum , so we need to subtract it's value .. subtracting it's value literally means removing it from our window .. but we don't just remove or skip the element hypothetically only .. but we must deduce any value it affected .. in our case it's the sum .. as this element is outside the window so counting it's sum is meaniningless as this element is not in the current window.
+
+        // Notice smth very important here , in fixed windows , you don't incremaent the left pointer as the left pointer in the window index is going to alwyas be equal to zero
+
         max_sum = max(max_sum, window_sum);
     }
 
