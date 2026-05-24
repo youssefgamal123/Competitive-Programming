@@ -72,7 +72,7 @@ void dfs(long long node, long long parent, long long distance) {
     // Recursively process every connected child/neighbor
 
     if (distance > diameter) {
-        diameter = distance;
+        diameter = distance; // notice that if the farthest distance from the farthese node is not bigger than the current node then this will also work
         firstFarnode = node;
     }
 
