@@ -1,0 +1,227 @@
+# Binary Search on Answer — Cheat Sheet
+
+## Core Idea
+
+Binary search is NOT only for sorted arrays.
+
+It works on any MONOTONIC search space.
+
+Meaning:
+
+* condition changes in ONE direction only
+* there exists a turning point
+
+Example:
+
+FFFFTTTT
+
+or
+
+TTTTFFFF
+
+---
+
+# Monotonic Property
+
+A condition is monotonic if:
+
+* once TRUE → always TRUE in one direction
+  OR
+* once FALSE → always FALSE in one direction
+
+Example:
+
+k:       1 2 3 4 5 6
+works?:  F F F T T T
+
+Once it becomes TRUE, it never becomes FALSE again.
+
+---
+
+# Why Binary Search Works
+
+After checking `mid`, we can safely discard HALF the space.
+
+Example:
+
+FFFFTTTT
+
+If `mid == TRUE`:
+
+* everything RIGHT is also TRUE
+* so search LEFT for smaller valid answer
+
+If `mid == FALSE`:
+
+* everything LEFT is also FALSE
+* so search RIGHT
+
+Without monotonicity:
+
+FTFTFT
+
+Binary search breaks because we cannot safely eliminate half.
+
+---
+
+# Recognition Pattern
+
+Think binary search on answer when problem says:
+
+* minimum possible
+* maximum possible
+* smallest X
+* largest X
+* minimize / maximize
+* feasible
+* possible
+* at least
+* can we achieve
+
+Then ask:
+
+"Can I turn this into a YES/NO check?"
+
+---
+
+# The 3 Questions
+
+1. What is the answer range?
+2. Can I check if a candidate works?
+3. Is the check monotonic?
+
+If YES to all → binary search on answer.
+
+---
+
+# Generic Pattern
+
+```cpp
+while (left <= right) {
+
+    long long mid = left + (right - left) / 2;
+
+    if (check(mid)) {
+
+        ans = mid;
+
+        // search for better answer
+    }
+    else {
+
+        // search opposite side
+    }
+}
+```
+
+---
+
+# Finding Minimum Valid Answer
+
+Pattern:
+
+FFFFTTTT
+
+Code:
+
+```cpp
+if (check(mid)) {
+
+    ans = mid;
+    right = mid - 1;
+
+} else {
+
+    left = mid + 1;
+}
+```
+
+---
+
+# Finding Maximum Valid Answer
+
+Pattern:
+
+TTTTFFFF
+
+Code:
+
+```cpp
+if (check(mid)) {
+
+    ans = mid;
+    left = mid + 1;
+
+} else {
+
+    right = mid - 1;
+}
+```
+
+---
+
+# Koko Eating Bananas
+
+Search Space:
+
+k = eating speed
+
+Question:
+
+"Can Koko finish within h hours?"
+
+Observation:
+
+* larger k → easier
+* once possible → always possible
+
+Pattern:
+
+FFFFTTTT
+
+So binary search works.
+
+---
+
+# Important Insight
+
+Binary search is actually searching for:
+
+THE TURNING POINT
+
+Example:
+
+FFFFTTTT
+^
+
+or
+
+TTTTFFFF
+^
+
+---
+
+# Common Binary Search on Answer Problems
+
+* Koko Eating Bananas
+* Capacity to Ship Packages
+* Split Array Largest Sum
+* Allocate Books
+* Painter Partition
+* Aggressive Cows
+* Minimum Days to Make Bouquets
+* Smallest Divisor Given Threshold
+
+---
+
+# Golden Rule
+
+Ask yourself:
+
+"If X works, will all bigger X also work?"
+
+OR
+
+"If X fails, will all smaller X also fail?"
+
+If YES → monotonic → binary search possible.
