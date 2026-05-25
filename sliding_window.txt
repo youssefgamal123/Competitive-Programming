@@ -144,7 +144,20 @@ while (invalid) {
     left++;
 }
 
-count += (right - left + 1);
+count += (right - left + 1);   // this does not just add thw window size , it adds the edge case of taking each element by itself as a subarray of the current window so if window size is 6,3 as {1,2,3} then the ans will be 6 cuz u take 1 and 2 and 3 separatley as subarrays
+and the combination of them at each iteration
+so 1 2 3
+can be {1,2} {1} , {2}  so at iteration of 2 the count will be equal to 3 so this equation counts the number of subarrays correctly , also chekc countdistictcubarraysproblem
+
+After making the window valid:
+
+[left ... right]
+
+ALL subarrays ending at right are valid.
+
+Count of those subarrays:
+
+right - left + 1
 
 Examples:
 
