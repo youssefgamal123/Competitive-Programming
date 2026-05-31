@@ -1,0 +1,271 @@
+Connected Components / Counting Rooms Cheat Sheet
+Core Idea
+A room is a connected group of floor cells.
+Connected means:
+reachable through valid movement
+usually up/down/left/right
+Walls block movement.
+Every room is a connected component.
+Graph Abstraction
+In grid problems:
+Each floor cell . is considered a graph node.
+Movement between neighboring cells forms edges.
+Walls # are ignored and are not graph nodes.
+
+Example:
+
+..
+
+becomes:
+
+A -- B
+
+because movement exists between them.
+
+What DFS Means Here
+dfs(r,c)
+
+means:
+
+Explore and visit all reachable cells connected to (r,c).
+
+DFS flood-fills the entire room.
+
+Why DFS Works
+
+DFS is fundamentally:
+
+explore everything reachable from a starting node
+
+A room is exactly:
+
+everything reachable from one floor cell
+
+So DFS naturally discovers the whole room.
+
+Main Connected Components Logic
+
+Loop over every cell in the grid.
+
+If current cell is:
+#
+ignore
+wall
+If current cell is:
+visited '.'
+ignore
+already belongs to a discovered room
+If current cell is:
+unvisited '.'
+
+Then:
+
+a NEW room/component was discovered
+increment answer
+DFS the entire room
+Very Important Insight
+
+We are NOT counting dots.
+
+We are counting:
+
+groups of connected dots
+
+DFS exists to:
+
+mark the entire connected component visited
+
+so we do not count the same room multiple times.
+
+Why We Increment BEFORE DFS
+
+The moment we encounter:
+
+unvisited floor cell
+
+we already know:
+
+this belongs to a completely new room
+
+So:
+
+rooms++;
+
+DFS afterward simply:
+
+claims ownership of the entire room
+
+by marking all connected cells visited.
+
+visited[][] Meaning
+visited[r][c]
+
+means:
+
+Has this cell already been explored as part of some room?
+
+Without visited:
+
+DFS loops forever
+same room gets counted many times
+Directions Arrays
+int dr[4] = {1, -1, 0, 0};
+int dc[4] = {0, 0, 1, -1};
+
+Represents:
+
+Direction	New Position
+Down	(r+1,c)
+Up	(r-1,c)
+Right	(r,c+1)
+Left	(r,c-1)
+Neighbor Traversal
+for (int i = 0; i < 4; i++) {
+
+    int nr = r + dr[i];
+    int nc = c + dc[i];
+}
+
+Meaning:
+
+Try all neighboring cells.
+
+Boundary Checks
+if (nr < 0 || nr >= n || nc < 0 || nc >= m)
+
+means:
+
+Ignore cells outside the grid.
+
+Why < 0 Exists
+
+Example:
+
+Current cell:
+
+(0,3)
+
+Move UP:
+
+(-1,3)
+
+Invalid because:
+
+negative row index does not exist
+
+Same idea for:
+
+left of grid
+below grid
+right of grid
+DFS Flow
+
+Inside DFS:
+
+mark current cell visited
+try all 4 directions
+skip:
+outside grid
+walls
+visited cells
+recurse into valid neighbors
+Full Mental Model
+Find unexplored floor cell
+→ new room discovered
+→ DFS entire reachable region
+→ mark whole room visited
+→ continue searching
+Most Important Abstraction
+
+Connected Component:
+
+all nodes reachable from one another
+
+DFS:
+
+explore everything reachable
+
+Therefore:
+
+DFS naturally finds connected components
+
+CODE TEMPLATE FOR THIS CAN BE :
+
+
+
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int n, m;
+
+vector<string> grid;
+
+vector<vector<bool>> visited;
+
+// down, up, right, left
+int dr[4] = {1, -1, 0, 0};
+int dc[4] = {0, 0, 1, -1};
+
+
+void dfs(int r, int c) {
+
+    // mark current cell visited
+    visited[r][c] = true;
+
+    // try all 4 directions
+    for (int i = 0; i < 4; i++) {
+
+        int nr = r + dr[i];
+        int nc = c + dc[i];
+
+        // outside grid
+        if (nr < 0 || nr >= n || nc < 0 || nc >= m) {
+            continue;
+        }
+
+        // wall
+        if (grid[nr][nc] == '#') {
+            continue;
+        }
+
+        // already visited
+        if (visited[nr][nc]) {
+            continue;
+        }
+
+        dfs(nr, nc);
+    }
+}
+
+
+int main() {
+
+    cin >> n >> m;
+
+    grid.resize(n);
+
+    for (int i = 0; i < n; i++) {
+        cin >> grid[i];
+    }
+
+    visited.resize(n, vector<bool>(m, false));
+
+    int rooms = 0;
+
+    for (int r = 0; r < n; r++) {
+
+        for (int c = 0; c < m; c++) {
+
+            // found new component / room
+            if (grid[r][c] == '.' && !visited[r][c]) {
+
+                rooms++;
+
+                dfs(r, c);
+            }
+        }
+    }
+
+    cout << rooms << endl;
+}
