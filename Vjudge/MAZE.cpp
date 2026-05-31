@@ -91,6 +91,21 @@ int main () {
          }
       }
 
+
+      /*
+
+
+      Theory here is : DFS visits cells in an order where every new cell is attached to previously visited cells.
+      therefore
+
+      Keeping the first (total - k) visited cells stays connected,
+so we delete the LAST k cells from the DFS order.
+
+
+       */
+
+
+
       for (int i = cells.size() - 1; i >= (int)cells.size() - k; i--) {
 
          int r = cells[i].first;
