@@ -1,0 +1,438 @@
+Pattern 1: Static Range Sum Query
+Problem
+
+Given array:
+
+nums = [1,2,3,4,5]
+
+Answer many queries:
+
+sum(1,3) = 2+3+4 = 9
+Brute Force
+for(int i=l;i<=r;i++)
+    sum += nums[i];
+
+O(n) per query.
+
+Prefix Sum Idea
+prefix[i]
+=
+sum from 0 -> i
+
+Example
+
+nums   = [1,2,3,4,5]
+
+prefix = [1,3,6,10,15]
+Formula
+sum(l,r)
+=
+prefix[r]
+-
+prefix[l-1]
+
+Special case:
+
+l == 0
+
+return
+
+prefix[r]
+Code
+vector<int> prefix(n);
+
+prefix[0] = nums[0];
+
+for(int i=1;i<n;i++)
+    prefix[i] = prefix[i-1] + nums[i];
+
+int rangeSum(int l,int r){
+
+    if(l==0)
+        return prefix[r];
+
+    return prefix[r] - prefix[l-1];
+}
+Recognition
+
+Contains:
+
+many range sum queries
+immutable array
+static array
+
+👉 Prefix Sum
+
+Pattern 2: Prefix Sum With Dummy Zero
+
+Cleaner version.
+
+Instead build:
+
+prefix[0] = 0
+
+Example
+
+nums   = [1,2,3,4]
+
+prefix = [0,1,3,6,10]
+Formula
+sum(l,r)
+=
+prefix[r+1]
+-
+prefix[l]
+
+No edge cases.
+
+Code
+vector<int> prefix(n+1,0);
+
+for(int i=0;i<n;i++)
+    prefix[i+1] = prefix[i] + nums[i];
+
+int rangeSum(int l,int r){
+    return prefix[r+1] - prefix[l];
+}
+Interview Tip
+
+This version is used most often.
+
+Pattern 3: Subarray Sum Equals K
+
+LeetCode 560
+
+One of the most important interview problems.
+
+Problem
+nums = [1,1,1]
+k = 2
+
+Answer:
+
+2
+
+because
+
+[1,1]
+[1,1]
+Key Observation
+
+If
+
+prefix[j] - prefix[i] = k
+
+then
+
+prefix[i]
+=
+prefix[j] - k
+
+So for every prefix sum:
+
+look for
+
+currentSum - k
+
+in hashmap.
+
+Code
+int subarraySum(vector<int>& nums, int k) {
+
+    unordered_map<int,int> mp;
+
+    mp[0] = 1;
+
+    int sum = 0;
+    int ans = 0;
+
+    for(int x : nums){
+
+        sum += x;
+
+        if(mp.count(sum-k))
+            ans += mp[sum-k];
+
+        mp[sum]++;
+    }
+
+    return ans;
+}
+Recognition
+
+Contains:
+
+count subarrays
+sum equals k
+
+👉 Prefix Sum + HashMap
+
+Pattern 4: Continuous Subarray Sum
+
+LeetCode 523
+
+Problem
+
+Find subarray whose sum is divisible by k.
+
+Key Observation
+
+If
+
+prefix[i] % k
+==
+prefix[j] % k
+
+then
+
+prefix[j]-prefix[i]
+
+is divisible by k.
+
+Store
+remainder -> first index
+Recognition
+
+Contains:
+
+divisible by k
+multiple of k
+
+👉 Prefix Sum + Mod
+
+Pattern 5: Maximum Size Subarray Sum = K
+
+LeetCode 325
+
+Problem
+
+Find longest subarray with sum k.
+
+Observation
+
+Same as 560.
+
+Need:
+
+prefix[j]-prefix[i] = k
+
+Store first occurrence.
+
+Code
+unordered_map<int,int> first;
+
+first[0] = -1;
+
+int sum = 0;
+int ans = 0;
+
+for(int i=0;i<n;i++){
+
+    sum += nums[i];
+
+    if(first.count(sum-k))
+        ans = max(ans , i-first[sum-k]);
+
+    if(!first.count(sum))
+        first[sum] = i;
+}
+Recognition
+
+Contains:
+
+longest subarray
+sum equals k
+
+👉 Prefix + HashMap
+
+Pattern 6: Product Except Self
+
+LeetCode 238
+
+Problem
+[1,2,3,4]
+
+Output
+
+[24,12,8,6]
+Idea
+
+Store:
+
+left products
+right products
+
+Exactly prefix/suffix.
+
+Code
+vector<int> ans(n,1);
+
+int pref = 1;
+
+for(int i=0;i<n;i++){
+    ans[i] = pref;
+    pref *= nums[i];
+}
+
+int suff = 1;
+
+for(int i=n-1;i>=0;i--){
+    ans[i] *= suff;
+    suff *= nums[i];
+}
+Recognition
+
+Contains:
+
+except self
+
+👉 Prefix + Suffix
+
+Pattern 7: Equilibrium Index
+Problem
+
+Find index where:
+
+left sum == right sum
+Idea
+
+Total sum known.
+
+For each index:
+
+right = total - left - nums[i]
+Code
+int total = accumulate(nums.begin(),nums.end(),0);
+
+int left = 0;
+
+for(int i=0;i<n;i++){
+
+    int right = total - left - nums[i];
+
+    if(left == right)
+        return i;
+
+    left += nums[i];
+}
+Recognition
+
+Contains:
+
+pivot index
+equilibrium
+
+👉 Prefix Sum
+
+Pattern 8: 2D Prefix Sum
+
+LeetCode 304
+
+Problem
+
+Many rectangle sum queries.
+
+Build
+pref[r][c]
+
+stores sum from
+
+(0,0)
+to
+(r,c)
+Formula
+sum =
+pref[r2][c2]
+-
+pref[r1-1][c2]
+-
+pref[r2][c1-1]
++
+pref[r1-1][c1-1]
+Code
+pref[i][j] =
+matrix[i][j]
++ pref[i-1][j]
++ pref[i][j-1]
+- pref[i-1][j-1];
+Recognition
+
+Contains:
+
+rectangle sum
+matrix sum query
+
+👉 2D Prefix Sum
+
+Pattern 9: Difference Array (Range Updates)
+Problem
+
+Perform many updates:
+
+add +5 to [l,r]
+Brute
+for(i=l;i<=r;i++)
+    arr[i]+=5;
+
+O(n)
+
+Difference Array
+
+Update only boundaries:
+
+diff[l] += val;
+
+diff[r+1] -= val;
+
+After all updates:
+
+Take prefix sum.
+
+Code
+vector<int> diff(n+1,0);
+
+diff[l] += val;
+
+if(r+1 < n)
+    diff[r+1] -= val;
+
+for(int i=1;i<n;i++)
+    diff[i] += diff[i-1];
+Recognition
+
+Contains:
+
+many range updates
+add value to range
+
+👉 Difference Array
+
+Ultimate Prefix Sum Interview Map
+Problem Type	Pattern
+Range Sum Query	Prefix Sum
+Immutable Array	Prefix Sum
+Count Subarrays = K	Prefix + HashMap
+Longest Subarray = K	Prefix + HashMap
+Divisible by K	Prefix + Mod
+Pivot Index	Prefix Sum
+Product Except Self	Prefix + Suffix
+Rectangle Sum Query	2D Prefix Sum
+Many Range Updates	Difference Array
+Fast Recognition Rules
+
+If interviewer says:
+
+"Many range sum queries"
+Prefix Sum
+"Count subarrays"
+Prefix + HashMap
+"Longest subarray"
+Prefix + HashMap
+"Divisible by K"
+Prefix % K
+"Rectangle queries"
+2D Prefix Sum
+"Many range updates"
+Difference Array
+
+If you master just Range Sum Query, Subarray Sum Equals K (560), 2D Prefix Sum, and Difference Array, you'll solve about 80% of prefix-sum interview questions

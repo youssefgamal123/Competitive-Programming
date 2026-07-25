@@ -19,7 +19,7 @@ int thanosSort(const vector<int>& a, int l, int r) {
     int mid = (l + r) / 2;
     int leftHalf = thanosSort(a, l, mid);
     int rightHalf = thanosSort(a, mid + 1, r);
-
+e
     return max(leftHalf, rightHalf);
 }
 

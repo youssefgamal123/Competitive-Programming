@@ -45,7 +45,7 @@ void BFS_SSSP(int source, int destination) {
             // shortest distance transition
             dist[neighbor] = dist[currnode] + 1;
 
-            // save path information
+            // save path informationl
             parent[neighbor] = currnode;
 
             q.push(neighbor);

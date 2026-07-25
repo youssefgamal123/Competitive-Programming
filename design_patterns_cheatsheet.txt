@@ -1,0 +1,1048 @@
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║              DESIGN PATTERNS CHEAT SHEET                                       ║
+║              Problem → Pattern → Solution                                       ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 1: CREATIONAL PATTERNS
+  (How objects are created)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+────────────────────────────────────────────────────────────────────────────────
+  [1] SINGLETON
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You have a class like a Logger or DatabaseConnection that gets instantiated
+  multiple times across your codebase. Each call to `new Logger()` creates a
+  brand-new object, wasting memory and causing inconsistent state.
+
+  // ❌ BROKEN CODE
+  class Logger {
+    constructor() {
+      this.logs = [];
+    }
+    log(msg) { this.logs.push(msg); }
+  }
+
+  const loggerA = new Logger();
+  const loggerB = new Logger();
+
+  loggerA.log("User logged in");
+  console.log(loggerB.logs); // [] — loggerB knows nothing! Different instances.
+  console.log(loggerA === loggerB); // false — two separate objects in memory
+
+▌ THE PATTERN: SINGLETON
+  Ensure a class has only ONE instance, and provide a global access point to it.
+  The constructor is privatized; a static method controls creation and caching.
+
+▌ WHY THIS PATTERN?
+  - One shared instance = consistent state across the whole app.
+  - Saves memory for heavy objects (DB connections, config managers).
+  - Controlled access — no accidental duplicate instantiation.
+
+  // ✅ FIXED CODE
+  class Logger {
+    constructor() {
+      if (Logger._instance) {
+        return Logger._instance;  // return existing instance
+      }
+      this.logs = [];
+      Logger._instance = this;
+    }
+
+    log(msg) { this.logs.push(msg); }
+    getLogs() { return this.logs; }
+  }
+
+  const loggerA = new Logger();
+  const loggerB = new Logger();
+
+  loggerA.log("User logged in");
+  console.log(loggerB.getLogs()); // ["User logged in"] — same instance!
+  console.log(loggerA === loggerB); // true ✓
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [2] BUILDER
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You need to create a complex object (like a User profile or an HTTP Request)
+  with many optional fields. Using a giant constructor leads to "telescoping
+  constructor" hell — hard to read, easy to pass args in the wrong order.
+
+  // ❌ BROKEN CODE
+  class User {
+    constructor(name, age, email, address, phone, newsletter, role) {
+      this.name = name;
+      this.age = age;
+      this.email = email;
+      this.address = address;
+      this.phone = phone;
+      this.newsletter = newsletter;
+      this.role = role;
+    }
+  }
+
+  // Which arg is which?? Easy to mess up.
+  const user = new User("Ali", 25, "ali@mail.com", null, null, true, "admin");
+
+▌ THE PATTERN: BUILDER
+  Separate object construction from its representation. Use a builder object
+  with chainable setter methods, and a final `.build()` that returns the result.
+
+▌ WHY THIS PATTERN?
+  - Readable, step-by-step construction.
+  - Only set what you need — skip optional fields cleanly.
+  - Enforces a clear build process; easy to add validation in `.build()`.
+
+  // ✅ FIXED CODE
+  class UserBuilder {
+    constructor(name) {
+      this.user = { name };  // name is required
+    }
+
+    setAge(age)           { this.user.age = age;           return this; }
+    setEmail(email)       { this.user.email = email;       return this; }
+    setAddress(address)   { this.user.address = address;   return this; }
+    setPhone(phone)       { this.user.phone = phone;       return this; }
+    setNewsletter(val)    { this.user.newsletter = val;    return this; }
+    setRole(role)         { this.user.role = role;         return this; }
+
+    build() {
+      if (!this.user.email) throw new Error("Email is required");
+      return this.user;
+    }
+  }
+
+  const user = new UserBuilder("Ali")
+    .setAge(25)
+    .setEmail("ali@mail.com")
+    .setRole("admin")
+    .setNewsletter(true)
+    .build();
+
+  // Clean, explicit, readable ✓
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [3] PROTOTYPE
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You have a fully configured object and need many similar copies. Creating each
+  from scratch is expensive (e.g., querying a DB, doing heavy computation). Using
+  `new` re-runs all that setup every time.
+
+  // ❌ BROKEN CODE
+  class Enemy {
+    constructor() {
+      // Imagine this does expensive setup
+      this.type = "Goblin";
+      this.health = 100;
+      this.damage = 15;
+      this.loot = ["coin", "dagger"];
+    }
+  }
+
+  // Creating 1000 goblins re-runs the constructor 1000 times — wasteful
+  const enemies = Array.from({ length: 1000 }, () => new Enemy());
+
+▌ THE PATTERN: PROTOTYPE
+  Create new objects by cloning an existing "prototype" instance. The original
+  is created once; clones copy its state cheaply.
+
+▌ WHY THIS PATTERN?
+  - Avoids expensive re-initialization.
+  - Clone and then tweak — faster than building from scratch.
+  - Useful for object templates / presets.
+
+  // ✅ FIXED CODE
+  class Enemy {
+    constructor(type, health, damage, loot) {
+      this.type = type;
+      this.health = health;
+      this.damage = damage;
+      this.loot = [...loot]; // deep-ish copy of array
+    }
+
+    clone() {
+      return new Enemy(this.type, this.health, this.damage, this.loot);
+    }
+  }
+
+  // Create the prototype ONCE
+  const goblinPrototype = new Enemy("Goblin", 100, 15, ["coin", "dagger"]);
+
+  // Clone cheaply, then customize if needed
+  const goblin1 = goblinPrototype.clone();
+  const goblin2 = goblinPrototype.clone();
+  goblin2.health = 150; // boss variant
+
+  console.log(goblin1.type); // "Goblin"
+  console.log(goblin2.health); // 150, goblin1 unaffected ✓
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [4] FACTORY METHOD
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You have code that creates objects using `new`, but the exact class to
+  instantiate depends on runtime conditions. Hardcoding `new Dog()` or
+  `new Cat()` everywhere ties your code to concrete classes — adding a new
+  animal means hunting down every `new` call.
+
+  // ❌ BROKEN CODE
+  function getAnimalSound(type) {
+    if (type === "dog") {
+      const dog = new Dog();
+      return dog.speak();
+    } else if (type === "cat") {
+      const cat = new Cat();
+      return cat.speak();
+    }
+    // Adding "parrot" means editing this function — violates Open/Closed Principle
+  }
+
+▌ THE PATTERN: FACTORY METHOD
+  Define an interface for creating objects, but let subclasses (or a factory
+  function/map) decide which class to instantiate. The creator code never uses
+  `new` directly on concrete classes.
+
+▌ WHY THIS PATTERN?
+  - Adding new types = add a new class + register it. No changes to existing code.
+  - Decouples object creation from usage.
+  - Centralizes instantiation logic.
+
+  // ✅ FIXED CODE
+  class Dog  { speak() { return "Woof!"; } }
+  class Cat  { speak() { return "Meow!"; } }
+  class Parrot { speak() { return "Hello!"; } }
+
+  const animalFactory = {
+    dog:    () => new Dog(),
+    cat:    () => new Cat(),
+    parrot: () => new Parrot(),
+  };
+
+  function createAnimal(type) {
+    const factory = animalFactory[type];
+    if (!factory) throw new Error(`Unknown animal: ${type}`);
+    return factory();
+  }
+
+  const animal = createAnimal("parrot");
+  console.log(animal.speak()); // "Hello!" ✓
+  // Adding a new animal? Just add a class and one entry to the map.
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [5] ABSTRACT FACTORY
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You need to create families of related objects (e.g., UI components) that must
+  work together. If you mix components from different families (dark Button with
+  light Modal), the UI breaks visually or functionally.
+
+  // ❌ BROKEN CODE
+  const button = new DarkButton();
+  const modal  = new LightModal();  // Inconsistent! They don't match.
+
+▌ THE PATTERN: ABSTRACT FACTORY
+  Provide an interface for creating FAMILIES of related objects without specifying
+  their concrete classes. Each "factory" produces a consistent set of products.
+
+▌ WHY THIS PATTERN?
+  - Guarantees that products from one factory are compatible.
+  - Swap entire families (dark ↔ light theme) by changing one factory.
+  - Enforces consistency at the architecture level.
+
+  // ✅ FIXED CODE
+
+  // Light theme family
+  class LightButton { render() { return "[ Light Button ]"; } }
+  class LightModal  { render() { return "< Light Modal >";  } }
+
+  // Dark theme family
+  class DarkButton  { render() { return "[ DARK BUTTON ]"; } }
+  class DarkModal   { render() { return "< DARK MODAL >";  } }
+
+  // Factories — each produces a matched family
+  const LightThemeFactory = {
+    createButton: () => new LightButton(),
+    createModal:  () => new LightModal(),
+  };
+
+  const DarkThemeFactory = {
+    createButton: () => new DarkButton(),
+    createModal:  () => new DarkModal(),
+  };
+
+  function buildUI(factory) {
+    const button = factory.createButton();
+    const modal  = factory.createModal();
+    console.log(button.render(), modal.render());
+  }
+
+  buildUI(DarkThemeFactory);
+  // "[ DARK BUTTON ]  < DARK MODAL >" — always consistent ✓
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 2: STRUCTURAL PATTERNS
+  (How objects are composed)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+────────────────────────────────────────────────────────────────────────────────
+  [6] DECORATOR
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You want to add behavior to an object (logging, caching, encryption) without
+  modifying its class. Subclassing every combination explodes into class sprawl
+  (LoggedCachedEncryptedService, etc.).
+
+  // ❌ BROKEN CODE
+  class DataService {
+    fetch() { return "raw data"; }
+  }
+
+  // Need logging + caching? You'd make a new subclass for every combo.
+  class LoggedDataService extends DataService {
+    fetch() { console.log("fetching..."); return super.fetch(); }
+  }
+  // What about CachedLoggedDataService? Or LoggedCachedEncryptedDataService?
+
+▌ THE PATTERN: DECORATOR
+  Wrap objects in decorator objects that add behavior, implementing the same
+  interface as the wrapped object. Stack decorators like layers.
+
+▌ WHY THIS PATTERN?
+  - Add/remove behaviors at runtime without touching the original class.
+  - Mix and match features freely (Open/Closed Principle).
+  - Avoids exponential subclass explosion.
+
+  // ✅ FIXED CODE
+  class DataService {
+    fetch() { return "raw data"; }
+  }
+
+  class LoggingDecorator {
+    constructor(service) { this.service = service; }
+    fetch() {
+      console.log("Fetching data...");
+      const result = this.service.fetch();
+      console.log("Done.");
+      return result;
+    }
+  }
+
+  class CachingDecorator {
+    constructor(service) { this.service = service; this.cache = null; }
+    fetch() {
+      if (this.cache) { console.log("From cache"); return this.cache; }
+      this.cache = this.service.fetch();
+      return this.cache;
+    }
+  }
+
+  // Stack decorators freely
+  let service = new DataService();
+  service = new LoggingDecorator(service);
+  service = new CachingDecorator(service);
+
+  service.fetch(); // Logs + fetches
+  service.fetch(); // Serves from cache ✓
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [7] FACADE
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  Your subsystem has many classes with complex interactions. Client code must
+  know about all of them and coordinate them manually — creating tight coupling
+  and repetitive orchestration code everywhere.
+
+  // ❌ BROKEN CODE
+  // To place an order, the client must manually coordinate 4 subsystems:
+  const inventory = new InventoryService();
+  const payment   = new PaymentService();
+  const shipping  = new ShippingService();
+  const email     = new EmailService();
+
+  if (inventory.check("item-42")) {
+    payment.charge(user, 29.99);
+    shipping.schedule("item-42", user.address);
+    email.sendConfirmation(user.email);
+  }
+  // This block is repeated in cart, checkout, re-order flows...
+
+▌ THE PATTERN: FACADE
+  Provide a simple, unified interface to a complex subsystem. The facade
+  coordinates the subsystem internally; clients only talk to the facade.
+
+▌ WHY THIS PATTERN?
+  - Simplifies client code dramatically.
+  - Hides subsystem complexity behind a clean API.
+  - Reduces coupling — clients don't depend on subsystem internals.
+
+  // ✅ FIXED CODE
+  class OrderFacade {
+    constructor() {
+      this.inventory = new InventoryService();
+      this.payment   = new PaymentService();
+      this.shipping  = new ShippingService();
+      this.email     = new EmailService();
+    }
+
+    placeOrder(user, itemId, price) {
+      if (!this.inventory.check(itemId)) throw new Error("Out of stock");
+      this.payment.charge(user, price);
+      this.shipping.schedule(itemId, user.address);
+      this.email.sendConfirmation(user.email);
+      return "Order placed!";
+    }
+  }
+
+  // Client only needs to know one thing:
+  const orderService = new OrderFacade();
+  orderService.placeOrder(user, "item-42", 29.99); // ✓
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [8] ADAPTER
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You need to use a third-party library or legacy class, but its interface
+  doesn't match what your code expects. You can't modify the external class.
+
+  // ❌ BROKEN CODE
+  // Your app expects: logger.log(message)
+  // But the third-party library uses: thirdPartyLib.writeLog(message)
+
+  class ThirdPartyLogger {
+    writeLog(msg) { console.log(`[LIB]: ${msg}`); }
+  }
+
+  function doWork(logger) {
+    logger.log("Starting work..."); // ❌ TypeError: logger.log is not a function
+  }
+
+  doWork(new ThirdPartyLogger()); // crashes
+
+▌ THE PATTERN: ADAPTER
+  Wrap the incompatible class in an adapter that translates its interface into
+  the one your code expects. Acts like a power plug adapter.
+
+▌ WHY THIS PATTERN?
+  - Use third-party or legacy code without modifying it.
+  - Swap out implementations behind a consistent interface.
+  - Bridges two incompatible interfaces cleanly.
+
+  // ✅ FIXED CODE
+  class ThirdPartyLogger {
+    writeLog(msg) { console.log(`[LIB]: ${msg}`); }
+  }
+
+  class LoggerAdapter {
+    constructor(thirdPartyLogger) {
+      this.logger = thirdPartyLogger;
+    }
+    log(msg) {
+      this.logger.writeLog(msg); // translate .log() → .writeLog()
+    }
+  }
+
+  function doWork(logger) {
+    logger.log("Starting work..."); // works with any logger that has .log()
+  }
+
+  const adapter = new LoggerAdapter(new ThirdPartyLogger());
+  doWork(adapter); // "[LIB]: Starting work..." ✓
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [9] FLYWEIGHT
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You're creating millions of similar objects (e.g., characters in a text editor,
+  trees in a forest game). Each object stores the same repeated data, causing
+  massive memory consumption.
+
+  // ❌ BROKEN CODE
+  class Tree {
+    constructor(x, y, type, color, texture) {
+      this.x = x;
+      this.y = y;
+      this.type = type;       // "Oak" — repeated in EVERY tree
+      this.color = color;     // "#3a5" — repeated in EVERY tree
+      this.texture = texture; // 2MB texture — repeated in EVERY tree!
+    }
+  }
+
+  // 100,000 oak trees = 100,000 copies of the same type/color/texture data
+  const forest = Array.from({ length: 100000 }, (_, i) =>
+    new Tree(i, i * 2, "Oak", "#3a5", "<2MB texture data>")
+  );
+
+▌ THE PATTERN: FLYWEIGHT
+  Separate intrinsic state (shared, immutable) from extrinsic state (unique per
+  instance). Store intrinsic state once in a shared flyweight; pass extrinsic
+  state in at use time.
+
+▌ WHY THIS PATTERN?
+  - Drastic memory reduction when many objects share common data.
+  - Ideal for particle systems, text editors, game entities.
+  - Shared data is stored once regardless of how many objects reference it.
+
+  // ✅ FIXED CODE
+  class TreeType {
+    // Intrinsic state — shared, created ONCE per type
+    constructor(type, color, texture) {
+      this.type = type;
+      this.color = color;
+      this.texture = texture;
+    }
+    draw(x, y) {
+      console.log(`Drawing ${this.type} at (${x}, ${y})`);
+    }
+  }
+
+  const TreeTypeFactory = {
+    _cache: {},
+    get(type, color, texture) {
+      const key = `${type}-${color}`;
+      if (!this._cache[key]) {
+        this._cache[key] = new TreeType(type, color, texture);
+      }
+      return this._cache[key]; // reuse existing flyweight
+    }
+  };
+
+  class Tree {
+    // Extrinsic state — unique per instance
+    constructor(x, y, treeType) {
+      this.x = x;
+      this.y = y;
+      this.treeType = treeType; // reference, not copy!
+    }
+    draw() { this.treeType.draw(this.x, this.y); }
+  }
+
+  // 100,000 trees, but only ONE TreeType object in memory ✓
+  const oakType = TreeTypeFactory.get("Oak", "#3a5", "<2MB texture>");
+  const forest = Array.from({ length: 100000 }, (_, i) =>
+    new Tree(i, i * 2, oakType)
+  );
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [10] PROXY
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You want to add access control, lazy loading, caching, or logging around an
+  object's operations — but you don't want to change the original class, and
+  you want the addition to be invisible to clients.
+
+  // ❌ BROKEN CODE
+  class ImageLoader {
+    constructor(url) {
+      this.url = url;
+      this.image = this._loadFromDisk(); // heavy! loads immediately even if never used
+    }
+    _loadFromDisk() { console.log(`Loading ${this.url}...`); return `<img:${this.url}>`; }
+    display() { console.log(this.image); }
+  }
+
+  const img = new ImageLoader("photo.jpg"); // loads immediately
+  // ... 10 seconds of code where img.display() is never called
+  // wasteful!
+
+▌ THE PATTERN: PROXY
+  Create a surrogate object that controls access to the real object. The proxy
+  implements the same interface and intercepts calls to add behavior (lazy init,
+  caching, access control, logging).
+
+▌ WHY THIS PATTERN?
+  - Lazy initialization — create expensive objects only when needed.
+  - Access control — gate operations behind permission checks.
+  - Caching — return cached results transparently.
+  - Transparent to the client — same interface as the real object.
+
+  // ✅ FIXED CODE
+  class ImageLoader {
+    constructor(url) {
+      this.url = url;
+      this.image = null;
+    }
+    _loadFromDisk() { console.log(`Loading ${this.url}...`); return `<img:${this.url}>`; }
+    display() {
+      if (!this.image) this.image = this._loadFromDisk(); // lazy load
+      console.log(this.image);
+    }
+  }
+
+  class ImageProxy {
+    constructor(url) { this.url = url; this.loader = null; }
+
+    display() {
+      // Only create the real object when actually needed
+      if (!this.loader) this.loader = new ImageLoader(this.url);
+      this.loader.display();
+    }
+  }
+
+  const img = new ImageProxy("photo.jpg"); // nothing loaded yet
+  // ... code runs ...
+  img.display(); // NOW it loads — lazy! ✓
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 3: BEHAVIORAL PATTERNS
+  (How objects communicate)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+────────────────────────────────────────────────────────────────────────────────
+  [11] OBSERVER
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  When something changes (a user logs in, a value updates), many other parts of
+  your app need to react. You hardcode all those reactions in one place — making
+  it a god function that knows too much, and adding new reactions means editing
+  core logic.
+
+  // ❌ BROKEN CODE
+  class UserService {
+    login(user) {
+      // One function knows about email, analytics, AND notifications — tightly coupled
+      emailService.sendWelcome(user);
+      analyticsService.track("login", user);
+      notificationService.alert(`${user.name} is online`);
+      // Adding a new reaction means editing THIS class
+    }
+  }
+
+▌ THE PATTERN: OBSERVER
+  Define a one-to-many dependency: when one object (Subject) changes state, all
+  registered dependents (Observers) are notified automatically.
+
+▌ WHY THIS PATTERN?
+  - Decouples the event source from its reactions.
+  - Add/remove observers at runtime without touching the subject.
+  - The subject doesn't know WHO is listening — just that someone is.
+  - Foundation of event systems, pub/sub, reactive programming.
+
+  // ✅ FIXED CODE
+  class EventEmitter {
+    constructor() { this.listeners = {}; }
+
+    on(event, callback) {
+      if (!this.listeners[event]) this.listeners[event] = [];
+      this.listeners[event].push(callback);
+    }
+
+    emit(event, data) {
+      (this.listeners[event] || []).forEach(cb => cb(data));
+    }
+  }
+
+  class UserService extends EventEmitter {
+    login(user) {
+      console.log(`${user.name} logged in`);
+      this.emit("login", user); // just broadcast — knows nothing about reactions
+    }
+  }
+
+  const userService = new UserService();
+
+  // Observers subscribe independently
+  userService.on("login", user => emailService.sendWelcome(user));
+  userService.on("login", user => analyticsService.track("login", user));
+  userService.on("login", user => notificationService.alert(`${user.name} online`));
+
+  userService.login({ name: "Ali" });
+  // All observers notified ✓ — adding new ones never touches UserService
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [12] STRATEGY
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You have an operation (sorting, payment, compression) with multiple algorithms.
+  You select which one with if/else or switch. Every new algorithm = new branch.
+  The class grows, becomes hard to test, and violates Open/Closed Principle.
+
+  // ❌ BROKEN CODE
+  class Checkout {
+    pay(amount, method) {
+      if (method === "credit") {
+        console.log(`Charging $${amount} to credit card`);
+      } else if (method === "paypal") {
+        console.log(`Sending $${amount} via PayPal`);
+      } else if (method === "crypto") {
+        console.log(`Transferring $${amount} in crypto`);
+      }
+      // Adding "apple pay" means editing this class again
+    }
+  }
+
+▌ THE PATTERN: STRATEGY
+  Define a family of algorithms, encapsulate each one in its own class, and make
+  them interchangeable. The context delegates the algorithm to the strategy object.
+
+▌ WHY THIS PATTERN?
+  - Add new strategies without touching existing code.
+  - Swap algorithms at runtime.
+  - Each strategy is independently testable.
+  - Eliminates conditionals from the context class.
+
+  // ✅ FIXED CODE
+  class CreditCardStrategy {
+    pay(amount) { console.log(`Charging $${amount} to credit card`); }
+  }
+  class PayPalStrategy {
+    pay(amount) { console.log(`Sending $${amount} via PayPal`); }
+  }
+  class CryptoStrategy {
+    pay(amount) { console.log(`Transferring $${amount} in crypto`); }
+  }
+
+  class Checkout {
+    constructor(paymentStrategy) {
+      this.strategy = paymentStrategy;
+    }
+    setStrategy(strategy) { this.strategy = strategy; }
+    pay(amount) { this.strategy.pay(amount); }
+  }
+
+  const checkout = new Checkout(new PayPalStrategy());
+  checkout.pay(99.99); // "Sending $99.99 via PayPal"
+
+  checkout.setStrategy(new CryptoStrategy());
+  checkout.pay(99.99); // "Transferring $99.99 in crypto" ✓
+  // New payment method? Add a class. Touch nothing else.
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [13] CHAIN OF RESPONSIBILITY
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  A request must pass through multiple handlers (auth, validation, rate limiting,
+  logging). Hardcoding this pipeline in one class creates a monolith. You can't
+  reorder, skip, or add handlers without rewriting the whole chain.
+
+  // ❌ BROKEN CODE
+  function handleRequest(req) {
+    // All logic jammed in one function — impossible to reuse or reorder
+    if (!req.authenticated) return "401 Unauthorized";
+    if (!req.body)          return "400 Bad Request";
+    if (req.rateExceeded)   return "429 Too Many Requests";
+    return processRequest(req);
+  }
+
+▌ THE PATTERN: CHAIN OF RESPONSIBILITY
+  Pass a request along a chain of handlers. Each handler decides to process the
+  request, pass it on, or stop the chain. Handlers are linked dynamically.
+
+▌ WHY THIS PATTERN?
+  - Decouple senders from receivers.
+  - Dynamically assemble and reorder the pipeline.
+  - Each handler has a single responsibility.
+  - Easy to add/remove handlers without modifying others.
+
+  // ✅ FIXED CODE
+  class Handler {
+    setNext(handler) { this.next = handler; return handler; }
+    handle(req) { return this.next ? this.next.handle(req) : "OK"; }
+  }
+
+  class AuthHandler extends Handler {
+    handle(req) {
+      if (!req.authenticated) return "401 Unauthorized";
+      console.log("Auth ✓");
+      return super.handle(req);
+    }
+  }
+
+  class ValidationHandler extends Handler {
+    handle(req) {
+      if (!req.body) return "400 Bad Request";
+      console.log("Validation ✓");
+      return super.handle(req);
+    }
+  }
+
+  class RateLimitHandler extends Handler {
+    handle(req) {
+      if (req.rateExceeded) return "429 Too Many Requests";
+      console.log("Rate limit ✓");
+      return super.handle(req);
+    }
+  }
+
+  // Build chain — easy to reorder or swap
+  const auth      = new AuthHandler();
+  const validate  = new ValidationHandler();
+  const rateLimit = new RateLimitHandler();
+
+  auth.setNext(validate).setNext(rateLimit);
+
+  const result = auth.handle({ authenticated: true, body: "data", rateExceeded: false });
+  console.log(result); // "OK" ✓
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [14] ITERATOR
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You have a custom data structure (a tree, a graph, a paginated list) and
+  consumers need to traverse it. Exposing the internal structure for traversal
+  creates tight coupling — change the structure and all traversal code breaks.
+
+  // ❌ BROKEN CODE
+  class PlaylistManager {
+    constructor() { this.songs = []; }
+    addSong(song) { this.songs.push(song); }
+  }
+
+  const playlist = new PlaylistManager();
+  playlist.addSong("Song A");
+  playlist.addSong("Song B");
+
+  // Consumer must know the internal structure is an array
+  for (let i = 0; i < playlist.songs.length; i++) {
+    console.log(playlist.songs[i]); // coupled to .songs array implementation
+  }
+
+▌ THE PATTERN: ITERATOR
+  Provide a standard way to sequentially access elements of a collection without
+  exposing its underlying structure. Implement the iterator protocol.
+
+▌ WHY THIS PATTERN?
+  - Hides internal representation from consumers.
+  - Uniform traversal interface — works with for...of, spread, etc.
+  - Swap the storage structure without changing traversal code.
+
+  // ✅ FIXED CODE
+  class PlaylistManager {
+    constructor() { this.songs = []; }
+    addSong(song) { this.songs.push(song); }
+
+    // Implement the iterator protocol
+    [Symbol.iterator]() {
+      let index = 0;
+      const songs = this.songs;
+      return {
+        next() {
+          return index < songs.length
+            ? { value: songs[index++], done: false }
+            : { done: true };
+        }
+      };
+    }
+  }
+
+  const playlist = new PlaylistManager();
+  playlist.addSong("Song A");
+  playlist.addSong("Song B");
+  playlist.addSong("Song C");
+
+  // Clean traversal — no knowledge of internals required
+  for (const song of playlist) {
+    console.log(song); // "Song A", "Song B", "Song C" ✓
+  }
+  console.log([...playlist]); // ["Song A", "Song B", "Song C"] ✓
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [15] TEMPLATE METHOD
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You have a multi-step algorithm where the overall structure is the same, but
+  certain steps differ by subclass. Copy-pasting the skeleton with small changes
+  causes code duplication and makes the shared structure hard to maintain.
+
+  // ❌ BROKEN CODE
+  class CSVReport {
+    generate() {
+      const data = this.fetchData();      // same
+      const parsed = this.parseCSV(data); // different
+      this.saveToFile(parsed);            // same
+    }
+  }
+
+  class JSONReport {
+    generate() {
+      const data = this.fetchData();       // duplicated!
+      const parsed = this.parseJSON(data); // different
+      this.saveToFile(parsed);             // duplicated!
+    }
+  }
+
+▌ THE PATTERN: TEMPLATE METHOD
+  Define the skeleton of an algorithm in a base class, deferring some steps to
+  subclasses. The base class calls abstract "hook" methods that subclasses fill in.
+
+▌ WHY THIS PATTERN?
+  - Eliminate code duplication — common steps live in ONE place.
+  - Subclasses only override what differs.
+  - The algorithm's structure is controlled by the base class (Hollywood Principle:
+    "Don't call us, we'll call you").
+
+  // ✅ FIXED CODE
+  class Report {
+    // Template method — defines the skeleton
+    generate() {
+      const data   = this.fetchData();   // shared
+      const parsed = this.parse(data);   // subclass fills this in
+      this.saveToFile(parsed);           // shared
+    }
+
+    fetchData()    { return "raw data from DB"; }
+    saveToFile(d)  { console.log(`Saving: ${d}`); }
+    parse(data)    { throw new Error("Subclass must implement parse()"); }
+  }
+
+  class CSVReport extends Report {
+    parse(data) { return `CSV: ${data}`; }
+  }
+
+  class JSONReport extends Report {
+    parse(data) { return `JSON: ${data}`; }
+  }
+
+  new CSVReport().generate();  // Saving: CSV: raw data from DB ✓
+  new JSONReport().generate(); // Saving: JSON: raw data from DB ✓
+
+
+────────────────────────────────────────────────────────────────────────────────
+  [16] MEMENTO
+────────────────────────────────────────────────────────────────────────────────
+
+▌ THE PROBLEM
+  You need undo/redo functionality. To restore an object's previous state, you'd
+  have to expose its internal fields — breaking encapsulation. Storing full copies
+  of the object externally exposes private implementation details.
+
+  // ❌ BROKEN CODE
+  class TextEditor {
+    constructor() { this.text = ""; }
+    type(str) { this.text += str; }
+  }
+
+  const editor = new TextEditor();
+  editor.type("Hello ");
+  editor.type("World");
+
+  // To undo, we need to reach into the object or store copies externally
+  // There's no clean way to do this without coupling or breaking encapsulation
+  const backup = editor.text; // exposing internals!
+  editor.type("!!!");
+  editor.text = backup; // hacky direct assignment — bad!
+
+▌ THE PATTERN: MEMENTO
+  Capture and externalize an object's internal state into a "memento" object —
+  without violating encapsulation. The originator creates/restores mementos;
+  a caretaker stores them.
+
+▌ WHY THIS PATTERN?
+  - Clean undo/redo without exposing internals.
+  - History management (version control, game saves, form drafts).
+  - The caretaker never inspects the memento — just stores/returns it.
+
+  // ✅ FIXED CODE
+  class TextEditor {
+    constructor() { this.text = ""; }
+    type(str)     { this.text += str; }
+    getContent()  { return this.text; }
+
+    // Create a snapshot
+    save()           { return { text: this.text }; } // Memento (plain object)
+    restore(memento) { this.text = memento.text;   } // Restore from snapshot
+  }
+
+  class History {
+    constructor() { this.stack = []; }
+    push(memento) { this.stack.push(memento); }
+    pop()         { return this.stack.pop(); }
+  }
+
+  const editor  = new TextEditor();
+  const history = new History();
+
+  editor.type("Hello ");
+  history.push(editor.save()); // snapshot 1
+
+  editor.type("World");
+  history.push(editor.save()); // snapshot 2
+
+  editor.type("!!!");
+  console.log(editor.getContent()); // "Hello World!!!"
+
+  editor.restore(history.pop()); // undo
+  console.log(editor.getContent()); // "Hello World" ✓
+
+  editor.restore(history.pop()); // undo again
+  console.log(editor.getContent()); // "Hello " ✓
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  QUICK REFERENCE SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CREATIONAL — controlling HOW objects are created
+  ┌────────────────────┬──────────────────────────────────────────────────────┐
+  │ Singleton          │ One instance only. Global access point.              │
+  │ Builder            │ Step-by-step construction of complex objects.        │
+  │ Prototype          │ Clone existing objects instead of building from scratch│
+  │ Factory Method     │ Delegate which class to instantiate to a factory.    │
+  │ Abstract Factory   │ Create families of related objects consistently.     │
+  └────────────────────┴──────────────────────────────────────────────────────┘
+
+  STRUCTURAL — controlling HOW objects are composed
+  ┌────────────────────┬──────────────────────────────────────────────────────┐
+  │ Decorator          │ Add behaviors by wrapping objects in layers.         │
+  │ Facade             │ Simplify a complex subsystem behind one interface.   │
+  │ Adapter            │ Bridge between incompatible interfaces.              │
+  │ Flyweight          │ Share common data to reduce memory for many objects. │
+  │ Proxy              │ Control access to an object (lazy, cache, guard).    │
+  └────────────────────┴──────────────────────────────────────────────────────┘
+
+  BEHAVIORAL — controlling HOW objects communicate
+  ┌────────────────────┬──────────────────────────────────────────────────────┐
+  │ Observer           │ Notify many listeners when one object changes.       │
+  │ Strategy           │ Swap algorithms at runtime without changing context. │
+  │ Chain of Resp.     │ Pass a request through a chain of handlers.          │
+  │ Iterator           │ Traverse a collection without exposing its structure.│
+  │ Template Method    │ Define algorithm skeleton; subclasses fill in steps. │
+  │ Memento            │ Snapshot & restore object state (undo/redo).         │
+  └────────────────────┴──────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  KEY PRINCIPLES THESE PATTERNS UPHOLD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  S — Single Responsibility  : One class, one job (Facade, Decorator)
+  O — Open/Closed            : Open for extension, closed for modification
+                               (Strategy, Factory Method, Observer)
+  L — Liskov Substitution    : Subtypes must be substitutable (Template Method)
+  I — Interface Segregation  : Don't force classes to implement unused methods
+  D — Dependency Inversion   : Depend on abstractions, not concretions
+                               (Abstract Factory, Strategy)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  All code examples in JavaScript (ES6+)
+  Patterns apply equally to TypeScript, Java, Python, C#, etc.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
